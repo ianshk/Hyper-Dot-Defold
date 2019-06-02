@@ -1,0 +1,40 @@
+
+local trail_maker = require("hyper_trails.trail_maker")
+
+go.property("use_world_position", false)
+go.property("trail_width", 20)
+go.property("trail_tint_color", vmath.vector4(1.0, 1.0, 1.0, 1.0))
+go.property("segment_length_max", 0)
+go.property("segment_length_min", 0)
+go.property("points_count", 16)
+go.property("points_limit", 0)
+go.property("fade_tail_alpha", 0)
+go.property("shrink_tail_width", false)
+go.property("shrink_length_per_sec", 0)
+go.property("texture_tiling", true)
+go.property("trail_model_url", msg.url("#trail_model"))
+
+function init(self)
+	self.draw_on = 0
+	trail_maker.init_vars(self)
+	trail_maker.init_props(self)
+	trail_maker.create_texture(self)
+	trail_maker.init_data_points(self)
+	--trail_maker.draw_trail(self)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("drawon") then
+		self.draw_on = 1
+		trail_maker.draw_trail(self)
+	elseif message_id == hash("drawoff") then
+		self.draw_off = 0
+	end
+end
+
+function update(self, dt)
+	trail_maker.follow_position(self, dt)
+	if self.draw_on == 1 then
+		trail_maker.draw_trail(self)
+	end
+end

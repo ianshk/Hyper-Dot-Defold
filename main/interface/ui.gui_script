@@ -1,0 +1,323 @@
+-- https://www.defold.com/manuals/gui-script/
+-- https://www.defold.com/ref/gui/ - API reference
+-- https://www.defold.com/manuals/gui/
+
+local SAVE_DATA_PATH = sys.get_save_file(sys.get_config("project.title"), "savedata")
+local ads = require ("main.ads")
+local BAR_SIZE_IN_PIXELS = 245
+
+
+function init(self)
+	self.taptexton = 1
+	self.levelcomplete = 0
+	self.show_second_chance = 1
+
+	self.save_data = sys.load(SAVE_DATA_PATH) or {}
+	-- Music data
+	self.save_data.music_on = self.save_data.music_on or 1
+	self.music_on = self.save_data.music_on
+
+	-- level used for displaying review box
+	self.save_data.level = self.save_data.level or 1
+	self.level = self.save_data.level
+
+	-- purchase paid
+	self.save_data.purchase_paid = self.save_data.purchase_paid or 0
+	self.purchase_paid = self.save_data.purchase_paid
+	print("ui - purchase paid: " .. self.purchase_paid)
+
+	-- Ad flag
+	self.run_video_ad = 0
+	ads.rewarded_pressed = 0
+
+	if self.purchase_paid == 0 then
+		ads.init_ads()
+	end
+end
+
+
+function final(self)
+	msg.post(".", "release_input_focus")
+	ads.remove_callback(self)
+end
+
+
+local function score_update(self, message)
+	--gui.set_text(gui.get_node("score"), tostring(message.score))
+end
+
+
+local function fadeout_pie(self, node)
+	local second_chance_button = gui.get_node("secondchancebutton")
+	gui.animate(second_chance_button, gui.PROP_COLOR, vmath.vector4(1, 1, 1, 0), gui.EASING_LINEAR, 0.2, 0, disable_pie, gui.PLAYBACK_ONCE_FORWARD)
+end
+
+
+local function disable_pie(self, node)
+	gui.set_enabled(gui.get_node("secondchancebutton"), false)
+end
+
+
+local function enable_gameover(self, message)
+	msg.post(".", "acquire_input_focus")
+
+	gui.set_enabled(gui.get_node("bgbox"), true)
+	gui.set_enabled(gui.get_node("homebutton"), true)
+	gui.set_enabled(gui.get_node("retrybutton"), true)
+
+	local percentage_string = tostring(message.percentage) .. "%" .. " Completed"
+
+	gui.set_text(gui.get_node("percentcompletetext"), percentage_string)	
+	gui.set_enabled(gui.get_node("percentcompletetext"), true)
+
+	local percent_text_node = gui.get_node("percentcompletetext")
+
+	gui.set_color(percent_text_node, vmath.vector4(1, 1, 1, 0))
+	gui.animate(percent_text_node, gui.PROP_COLOR, vmath.vector4(1, 1, 1, 1), gui.EASING_INOUTQUAD, 0.4, 0, nil)
+
+	-- show second chance if over 30% complete, only allow one second chance
+	--if message.percentage >= 30  and self.rewarded_ad_available == 1 then
+
+	if message.percentage >= 30 then
+		if self.show_second_chance == 1 then
+			self.show_second_chance = 0
+			gui.set_enabled(gui.get_node("secondchancebutton"), true)
+			gui.set_enabled(gui.get_node("pienode"), true)
+
+			if self.purchase_paid == 1 then
+				print("Purchase paid")
+				gui.animate(gui.get_node("pienode"), gui.PROP_FILL_ANGLE, 0, gui.EASING_LINEAR, 5, 0, fadeout_pie, gui.PLAYBACK_ONCE_FORWARD)
+			elseif ads.rewarded_available == 0 then
+				print("No video found")
+				local second_chance_node = gui.get_node("secondchancebutton")
+				local second_chance_color = gui.get_color(second_chance_node)
+				second_chance_color.w = 0.6
+
+				local pienode = gui.get_node("pienode")
+				local pie_node_color = gui.get_color(gui.get_node("pienode"))
+				pie_node_color.w = 0
+
+				gui.set_color(second_chance_node, second_chance_color)
+				gui.set_color(gui.get_node("pienode"), pie_node_color)
+			else
+				print("Rewarded add available")
+				gui.animate(gui.get_node("pienode"), gui.PROP_FILL_ANGLE, 0, gui.EASING_LINEAR, 5, 0, fadeout_pie, gui.PLAYBACK_ONCE_FORWARD)
+			end
+		end
+	end
+
+end
+
+
+local function disable_gameover(self)
+	gui.set_enabled(gui.get_node("bgbox"), false)
+	gui.set_enabled(gui.get_node("homebutton"), false)
+	gui.set_enabled(gui.get_node("nextlevelbutton"), false)
+	gui.set_enabled(gui.get_node("retrybutton"), false)
+	gui.set_enabled(gui.get_node("levelcompletetext"), false)
+	gui.set_enabled(gui.get_node("percentcompletetext"), false)
+	gui.set_enabled(gui.get_node("secondchancebutton"), false)
+	gui.set_enabled(gui.get_node("pienode"), false)
+	gui.set_enabled(gui.get_node("reviewbox"), false)
+end
+
+
+local function remove_jump_text(self)
+	if self.taptexton == 1 then
+		gui.set_enabled(gui.get_node("jumptext"), false)
+		self.taptexton = 0
+	end
+end
+
+
+local function show_jump_text(self)
+	gui.set_color(gui.get_node("jumptext"), vmath.vector4(1, 1, 1, 1))
+	gui.set_enabled(gui.get_node("jumptext"), true)
+	self.taptexton = 1
+end
+
+
+local function fade_jump_text(self)
+	local jumptext_node = gui.get_node("jumptext")
+	gui.animate(jumptext_node, gui.PROP_COLOR, vmath.vector4(1, 1, 1, 0), gui.EASING_INOUTQUAD, 1.5, 0, nil,  gui.PLAYBACK_LOOP_PINGPONG)
+end
+
+
+local function enable_complete(self)
+	self.levelcomplete = 1
+	msg.post(".", "acquire_input_focus")
+
+	if self.level == 5 then 
+		gui.set_enabled(gui.get_node("bgbox"), false)
+		gui.set_enabled(gui.get_node("reviewbox"), true)
+		gui.set_enabled(gui.get_node("homebutton"), false)
+		gui.set_enabled(gui.get_node("nextlevelbutton"), false)
+	else
+		gui.set_enabled(gui.get_node("bgbox"), true)
+	end
+
+	gui.set_enabled(gui.get_node("homebutton"), true)
+	gui.set_enabled(gui.get_node("nextlevelbutton"), true)
+	gui.set_enabled(gui.get_node("levelcompletetext"), true)
+
+	local complete_node = gui.get_node("levelcompletetext")
+
+	complete_node_position = gui.get_position(complete_node)
+	complete_node_position.y = complete_node_position.y + 20
+	gui.set_color(complete_node, vmath.vector4(1, 1, 1, 0))
+	gui.animate(complete_node, gui.PROP_POSITION, complete_node_position, gui.EASING_INOUTQUAD, 0.8, 0, nil)
+	gui.animate(complete_node, gui.PROP_COLOR, vmath.vector4(1, 1, 1, 1), gui.EASING_INOUTQUAD, 0.4, 0, nil)
+end
+
+
+local function set_level_text(self,message)
+	local current_level = message.current_level
+	local next_level = current_level + 1
+
+	if current_level >= 999 then
+		next_level = 999
+	end
+
+	gui.set_text(gui.get_node("progress_start_text"), tostring(current_level))
+	gui.set_text(gui.get_node("progress_end_text"), tostring(next_level))
+end
+
+
+local function update_bar(self,message)
+	local progress = message.progress
+	local bar_node = gui.get_node("fillbar")
+	local chunk_size = BAR_SIZE_IN_PIXELS / progress
+	local size = gui.get_size(bar_node)
+	size.x = size.x + chunk_size
+	gui.set_size(bar_node, size)
+
+	--print("chunk size: " .. chunk_size)
+end
+
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("update_score") then
+		score_update(self, message)
+	elseif message_id == hash("gameover") then
+		enable_gameover(self, message)
+	elseif message_id == hash("uioff") then
+		disable_gameover(self)
+		fade_jump_text(self)
+	elseif message_id == hash("jumptextoff") then
+		remove_jump_text(self)
+	elseif message_id == hash("jumptexton") then
+		show_jump_text(self)
+	elseif message_id == hash("complete") then
+		enable_complete(self)
+	elseif message_id == hash("setlevels") then
+		set_level_text(self, message)
+	elseif message_id == hash("updateprogress") then
+		update_bar(self, message)
+	elseif message_id == hash("nosecondchance") then
+		self.show_second_chance = 0
+	elseif message_id == hash("runvideoad") then
+		self.run_video_ad = 1
+	elseif message_id == hash("initads") then
+		init_ads(self)
+	end
+end
+
+
+function on_input(self, action_id, action)
+	if action_id == hash("left_button") and action.pressed then
+	--if action_id == hash("touch") and action.pressed then
+		
+		local retry_button = gui.get_node("retrybutton")
+		if gui.is_enabled(retry_button) then
+			if gui.pick_node(retry_button, action.x, action.y) then
+				if self.music_on == 1 then
+					--msg.post("/sound#menubeep", "play_sound", {gain = 0.6})
+					sound.play("/sound#menubeep", {gain = 0.6})
+				end
+				if ads.video_available == 1 and self.run_video_ad == 1 then
+					ads.show_video_ad(self)
+					ads.video_available = 0
+				else
+					msg.post("/game#game", "restart")
+				end
+			end
+		end 
+
+		local next_level_button = gui.get_node("nextlevelbutton")
+		if gui.is_enabled(next_level_button) then
+			if gui.pick_node(next_level_button, action.x, action.y) then
+				if self.music_on == 1 then
+					--msg.post("/sound#menubeep", "play_sound", {gain = 0.6})
+					sound.play("/sound#menubeep", {gain = 0.6})
+				end
+				msg.post("/game#game", "restart")
+			end
+		end
+
+		local home_button = gui.get_node("homebutton")
+		if gui.is_enabled(home_button) then
+			if gui.pick_node(home_button, action.x, action.y) then
+				if self.music_on == 1 then
+					--msg.post("/sound#menubeep", "play_sound", {gain = 0.6})
+					sound.play("/sound#menubeep", {gain = 0.6})
+				end
+				msg.post("/game#game", "home")
+			end
+		end
+
+		local second_chance_button = gui.get_node("secondchancebutton")
+		if gui.is_enabled(second_chance_button) then
+			if gui.pick_node(second_chance_button, action.x, action.y) then
+				if self.music_on == 1 then
+					--msg.post("/sound#menubeep", "play_sound", {gain = 0.6})
+					sound.play("/sound#menubeep", {gain = 0.6})
+				end
+
+				gui.set_enabled(gui.get_node("secondchancebutton"), false)
+				gui.set_enabled(gui.get_node("pienode"), false)
+
+				if self.purchase_paid == 1 then
+					msg.post("/game#game", "revive")
+				elseif ads.rewarded_available == 1 then
+					ads.show_rewarded_ad(self)
+					ads.rewarded_available = 0
+					ads.rewarded_pressed = 1
+				end
+			end
+		end
+
+		local review_box = gui.get_node("reviewbox")
+
+		local no_button = gui.get_node("nobutton")
+		if gui.is_enabled(review_box) then
+			if gui.pick_node(no_button, action.x, action.y) then
+				if self.music_on == 1 then
+					--msg.post("/sound#menubeep", "play_sound", {gain = 0.6})
+					sound.play("/sound#menubeep", {gain = 0.6})
+				end
+
+				gui.set_enabled(gui.get_node("reviewbox"), false)
+			end
+		end
+
+		local sure_button = gui.get_node("surebutton")
+		if gui.is_enabled(review_box) then
+			if gui.pick_node(sure_button, action.x, action.y) then
+				if self.music_on == 1 then
+					--msg.post("/sound#menubeep", "play_sound", {gain = 0.6})
+					sound.play("/sound#menubeep", {gain = 0.6})
+				end
+
+				gui.set_enabled(gui.get_node("reviewbox"), false)
+				local sys_name = sys.get_sys_info().system_name
+				if sys_name == "Android" then
+					sys.open_url("https://replace with android review URL")
+				elseif sys_name == "iPhone OS" then
+					sys.open_url("https://replace with iOS review URL")
+				end
+
+			end
+		end 
+
+	end
+end

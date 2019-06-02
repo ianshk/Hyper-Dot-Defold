@@ -1,0 +1,51 @@
+images {
+  image: "/images/progress.png"
+}
+images {
+  image: "/images/fillbar.png"
+}
+images {
+  image: "/images/buttonbig.png"
+}
+images {
+  image: "/images/buttonsmall.png"
+}
+images {
+  image: "/images/playbutton.png"
+}
+images {
+  image: "/images/settingsbutton.png"
+}
+images {
+  image: "/images/restorebutton.png"
+}
+images {
+  image: "/images/musicoffbutton.png"
+}
+images {
+  image: "/images/musiconbutton.png"
+}
+images {
+  image: "/images/noadsbutton.png"
+}
+images {
+  image: "/images/secondchancebutton.png"
+}
+images {
+  image: "/images/instagrambutton.png"
+}
+images {
+  image: "/images/reviewbox.png"
+}
+images {
+  image: "/images/nobutton.png"
+}
+images {
+  image: "/images/surebutton.png"
+}
+images {
+  image: "/images/logo.png"
+}
+margin: 1
+extrude_borders: 1
+inner_padding: 1

@@ -1,0 +1,5 @@
+script: "/main/custom.render_script"
+materials {
+  name: "gradient"
+  material: "/main/post/gradient.material"
+}

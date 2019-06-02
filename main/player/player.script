@@ -1,0 +1,26 @@
+local SCREEN_HEIGHT = tonumber(sys.get_config("display.height"))
+
+
+local function shoot_off_screen(self)
+	local player_pos = go.get_position(".")
+	player_pos.y = player_pos.y + SCREEN_HEIGHT
+	go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD, player_pos, go.EASING_INOUTCUBIC, 0.8, 0.15)	 
+end
+
+local function shrink_player(self)
+	go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD, 0.01, go.EASING_LINEAR, 0.2, 0)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("die") then
+		particlefx.play("#playerdie")
+	elseif message_id == hash("trail") then
+		msg.post("game:/player#trail_maker", "drawon")
+	elseif message_id == hash("trailstop") then
+		msg.post("game:/player#trail_maker", "drawoff")
+	elseif message_id == hash("shoot") then
+		shoot_off_screen(self)
+	elseif message_id == hash("shrink") then
+		shrink_player(self)
+	end
+end

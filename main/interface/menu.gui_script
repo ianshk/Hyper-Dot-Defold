@@ -1,0 +1,354 @@
+local SAVE_DATA_PATH = sys.get_save_file(sys.get_config("project.title"), "savedata")
+local ads = require ("main.ads")
+
+-- In app purchase stuff
+local REMOVE_ADS_ID = "com.replace.me"
+
+
+
+local function disable_message(self)
+	gui.set_enabled(gui.get_node("message"), false)
+end
+
+
+local function display_message(self, text)
+	gui.set_enabled(gui.get_node("message"), true)
+	gui.set_text(gui.get_node("message"), text)
+end
+
+local function restored(self)
+	self.purchase_paid = 1
+	self.save_data.purchase_paid = 1
+	self.save_data.ad_count = 0
+	sys.save(SAVE_DATA_PATH, self.save_data)
+	
+	gui.set_enabled(gui.get_node("noadsbutton"), false)
+	display_message(self, "Purchase restored.")
+
+	-- remove ad callback if setup
+	ads.remove_callback(self)
+end
+
+local function purchased(self)
+	self.purchase_paid = 1
+	self.save_data.purchase_paid = 1
+	self.save_data.ad_count = 0
+	sys.save(SAVE_DATA_PATH, self.save_data)
+	
+	gui.set_enabled(gui.get_node("noadsbutton"), false)
+	display_message(self, "All ads now removed.")
+
+	-- remove ad callback if setup
+	ads.remove_callback(self)
+end
+
+local function iap_callback(self, products, error)
+	print("list products")
+    if error == nil then
+        for i,p in pairs(products) do
+            print(p.ident)
+            print(p.title)
+            print(p.description)
+            print(p.currency_code)
+            print(p.price_string)
+        end
+	else
+		print("error: ")
+        print(error.error)
+    end
+end
+
+
+local function iap_listener(self, transaction, error)
+    if error == nil then
+        if transaction.state == iap.TRANS_STATE_PURCHASING then
+			print("Purchasing...")
+			--display_message(self, "Purchasing.")
+        elseif transaction.state == iap.TRANS_STATE_PURCHASED then
+			print("Purchased!")
+			purchased(self)
+        elseif transaction.state == iap.TRANS_STATE_UNVERIFIED then
+			print("Unverified!")
+			display_message(self, "Unverified.")
+			self.buypressed = 0
+        elseif transaction.state == iap.TRANS_STATE_FAILED then
+			print("Failed!")
+			display_message(self, "Failed.")
+			self.buypressed = 0
+        elseif transaction.state == iap.TRANS_STATE_RESTORED then
+			print("Restored")
+			display_message(self, "Purchase restored.")
+			restored(self)
+        end
+    else
+		display_message(self, error.error)
+		-- was an error so allow repurchase
+		self.buypressed = 0
+    end
+end
+
+
+local function iap_init(self)
+	iap.list({ REMOVE_ADS_ID }, iap_callback)
+end
+
+
+local function init_buttons(self)
+	local settings_button = gui.get_node("settingsbutton")
+	local musicon_button = gui.get_node("musiconbutton")
+	local musicoff_button = gui.get_node("musicoffbutton")
+	local instagram_button = gui.get_node("instagrambutton")
+
+	-- Corrent draw ordering
+	gui.move_above(settings_button, musicoff_button)
+	gui.move_above(settings_button, instagram_button)
+	
+	if self.music_on == 1 then
+		gui.move_above(musicon_button, musicoff_button)
+	else
+		gui.move_above(musicoff_button, musicon_button)
+	end
+
+	-- disable ad button if already paid
+	if self.purchase_paid == 1 then
+		gui.set_enabled(gui.get_node("noadsbutton"), false)
+	end
+end
+
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	-- Load Save game data
+
+	self.save_data = sys.load(SAVE_DATA_PATH) or {}
+	-- Level
+	self.save_data.level = self.save_data.level or 1
+	self.level = self.save_data.level
+
+	local level_string = "Level " .. tostring(self.level)
+	gui.set_text(gui.get_node("leveltext"), level_string)
+
+	-- Load settings data
+
+	self.save_data.purchase_paid = self.save_data.purchase_paid or 0
+	self.purchase_paid = self.save_data.purchase_paid
+	
+	-- Music
+	self.save_data.music_on = self.save_data.music_on or 1
+	self.music_on = self.save_data.music_on
+
+	print("music on: " .. self.music_on)
+	print("purchase paid: " .. self.purchase_paid)
+
+	self.settings_expanded = 0
+	self.on_mobile = 0
+
+	-- In app purchase stuff
+	local sys_name = sys.get_sys_info().system_name
+	if sys_name == "Android" or sys_name == "iPhone OS" then
+		iap_init(self)
+		iap.set_listener(iap_listener)
+		self.on_mobile = 1
+	end
+
+	init_buttons(self)
+
+	disable_message(self)
+
+	-- Slight animation on the logo
+	local logo = gui.get_node("logo")
+	local logo_pos = gui.get_position(logo)
+	logo_pos.y = logo_pos.y + 16
+	gui.animate(logo, gui.PROP_POSITION, logo_pos, gui.EASING_LINEAR, 5, 0, nil, gui.PLAYBACK_LOOP_PINGPONG)
+
+	-- flag so can't to buy multiple times
+	self.buypressed = 0
+
+	if self.purchase_paid == 0 then
+		ads.init_ads()
+	end
+end
+
+local function expanded(self, node)
+	self.settings_expanded = 1
+	self.buypressed = 0
+end
+
+local function collapsed(self, node)
+	self.settings_expanded = 0
+	self.buypressed = 0
+end
+
+
+local function expand_buttons(self)
+	local restore_button = gui.get_node("restorebutton")
+	local musicon_button = gui.get_node("musiconbutton")
+	local musicoff_button = gui.get_node("musicoffbutton")
+	local instagram_button = gui.get_node("instagrambutton")
+
+	-- Animations
+	gui.animate(restore_button, gui.PROP_POSITION, vmath.vector3(90, 200, 0), gui.EASING_LINEAR, 0.2, 0, expanded)
+	gui.animate(musicon_button, gui.PROP_POSITION, vmath.vector3(90, 310, 0), gui.EASING_LINEAR, 0.2, 0, nil)
+	gui.animate(musicoff_button, gui.PROP_POSITION, vmath.vector3(90, 310, 0), gui.EASING_LINEAR, 0.2, 0, nil)
+	gui.animate(instagram_button, gui.PROP_POSITION, vmath.vector3(90, 420, 0), gui.EASING_LINEAR, 0.2, 0, nil)
+end
+
+
+local function collapse_buttons(self)
+	local restore_button = gui.get_node("restorebutton")
+	local musicon_button = gui.get_node("musiconbutton")
+	local musicoff_button = gui.get_node("musicoffbutton")
+	local instagram_button = gui.get_node("instagrambutton")
+
+	self.settings_expanded = 0
+
+	-- Animations
+	gui.animate(restore_button, gui.PROP_POSITION, vmath.vector3(90, 90, 0), gui.EASING_LINEAR, 0.2, 0, collapsed)
+	gui.animate(musicon_button, gui.PROP_POSITION, vmath.vector3(90, 90, 0), gui.EASING_LINEAR, 0.2, 0, nil)
+	gui.animate(musicoff_button, gui.PROP_POSITION, vmath.vector3(90, 90, 0), gui.EASING_LINEAR, 0.2, 0, nil)
+	gui.animate(instagram_button, gui.PROP_POSITION, vmath.vector3(90, 90, 0), gui.EASING_LINEAR, 0.2, 0, nil)
+end
+
+
+function final(self)
+	msg.post(".", "release_input_focus")
+end
+
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Remove this function if not needed
+end
+
+
+local function music_off(self)
+	local musicon_button = gui.get_node("musiconbutton")
+	local musicoff_button = gui.get_node("musicoffbutton")
+
+	self.music_on = 0
+	self.save_data.music_on = self.music_on
+	sys.save(SAVE_DATA_PATH, self.save_data)
+	gui.set_enabled(gui.get_node("musiconbutton"), false)
+
+	if self.music_on == 1 then
+		gui.move_above(musicon_button, musicoff_button)
+	else
+		gui.move_above(musicoff_button, musicon_button)
+	end
+end
+
+local function music_on(self)
+	local musicon_button = gui.get_node("musiconbutton")
+	local musicoff_button = gui.get_node("musicoffbutton")
+
+	self.music_on = 1
+	self.save_data.music_on = self.music_on
+	sys.save(SAVE_DATA_PATH, self.save_data)
+	gui.set_enabled(gui.get_node("musiconbutton"), true)
+
+	if self.music_on == 1 then
+		gui.move_above(musicon_button, musicoff_button)
+	else
+		gui.move_above(musicoff_button, musicon_button)
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("left_button") and action.pressed then
+	--if action_id == hash("touch") and action.pressed then
+		
+		local play_button = gui.get_node("playbutton")
+		if gui.is_enabled(play_button) then
+			if gui.pick_node(play_button, action.x, action.y) then
+				if self.music_on == 1 then
+					sound.play("/sound#menubeep", {gain = 0.6})
+					--msg.post("/sound#menubeep", "play_sound", {gain = 0.6})
+				end
+				msg.post("controller:/controller#controller", "load_game")
+			end
+		end
+
+		-- Settings
+		local settings_button = gui.get_node("settingsbutton")
+		if gui.pick_node(settings_button, action.x, action.y) then
+			if self.settings_expanded == 0 then
+				if self.music_on == 1 then
+					--msg.post("/sound#menubeep", "play_sound", {gain = 0.6})
+					sound.play("/sound#menubeep", {gain = 0.6})
+				end
+				expand_buttons(self)
+			elseif self.settings_expanded == 1 then
+				if self.music_on == 1 then
+					--msg.post("/sound#menubeep", "play_sound", {gain = 0.6})
+					sound.play("/sound#menubeep", {gain = 0.6})
+				end
+				collapse_buttons(self)
+			end
+		end
+
+		-- Restore
+		if self.settings_expanded == 1 then
+			local restore_button = gui.get_node("restorebutton")
+			if gui.is_enabled(restore_button) then
+				if gui.pick_node(restore_button, action.x, action.y) then
+					if self.music_on == 1 then
+						sound.play("/sound#menubeep", {gain = 0.6})
+					end
+					local f = iap.restore()
+					if f == true then
+						display_message(self, "Please wait..")
+					end
+				end
+			end
+		end
+
+		if self.settings_expanded == 1 then
+			local instagram_button = gui.get_node("instagrambutton")
+			if gui.is_enabled(instagram_button) then
+				if gui.pick_node(instagram_button, action.x, action.y) then
+					sys.open_url("https://www.instagram.com/swippegames")
+				end
+			end
+		end
+
+		-- No ads
+		if self.purchase_paid == 0 then
+			local noads_button = gui.get_node("noadsbutton")
+			if gui.is_enabled(noads_button) then
+				if gui.pick_node(noads_button, action.x, action.y) then
+					if self.music_on == 1 then
+						--msg.post("/sound#menubeep", "play_sound", {gain = 0.6})
+						sound.play("/sound#menubeep", {gain = 0.6})
+					end
+
+					if self.buypressed == 0 then
+						if self.on_mobile == 1 then
+							display_message(self, "Please wait.")
+							iap.buy(REMOVE_ADS_ID)
+							self.buypressed = 1
+						end
+					end
+				end
+			end
+		end
+
+		-- Audio
+		if self.settings_expanded == 1 then
+			if self.music_on == 1 then
+				local musicon_button = gui.get_node("musiconbutton")
+				if gui.pick_node(musicon_button, action.x, action.y) then
+					music_off(self)
+				end
+			elseif self.music_on == 0 then
+				local musicoff_button = gui.get_node("musicoffbutton")
+				if gui.pick_node(musicoff_button, action.x, action.y) then
+					--msg.post("/sound#menubeep", "play_sound", {gain = 0.6})
+					sound.play("/sound#menubeep", {gain = 0.6})
+					music_on(self)
+				end
+			end
+		end
+
+	end
+end
+

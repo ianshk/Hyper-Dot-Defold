@@ -1,0 +1,69 @@
+# App manifest generated Sun Apr 14 2019 21:57:43 GMT+0800 (Hong Kong Standard Time)
+# Settings: Physics3D,Record,Profiler,Facebook,Gameroom
+platforms:
+    x86_64-osx:
+        context:
+            excludeLibs: ["engine","physics","LinearMath","BulletDynamics","BulletCollision","record","vpx","profilerext","facebookext"]
+            excludeSymbols: ["ProfilerExt","FacebookExt"]
+            libs: ["engine_release", "physics_2d","record_null","profilerext_null"]
+            linkFlags: []
+
+    x86_64-linux:
+        context:
+            excludeLibs: ["engine","physics","LinearMath","BulletDynamics","BulletCollision","record","vpx","profilerext","facebookext"]
+            excludeSymbols: ["ProfilerExt","FacebookExt"]
+            libs: ["engine_release","physics_2d","record_null","profilerext_null"]
+            linkFlags: []
+
+    js-web:
+        context:
+            excludeLibs: ["engine","physics","LinearMath","BulletDynamics","BulletCollision","record","vpx","profilerext","facebookext"]
+            excludeJsLibs: ["facebook"]
+            excludeSymbols: ["ProfilerExt","FacebookExt"]
+            libs: ["engine_release","physics_2d","record_null","profilerext_null"]
+            linkFlags: []
+
+    wasm-web:
+        context:
+            excludeLibs: ["engine","physics","LinearMath","BulletDynamics","BulletCollision","record","vpx","profilerext","facebookext"]
+            excludeJsLibs: ["facebook"]
+            excludeSymbols: ["ProfilerExt","FacebookExt"]
+            libs: ["engine_release","physics_2d","record_null","profilerext_null"]
+            linkFlags: []
+
+    x86-win32:
+        context:
+            excludeLibs: ["libphysics","libLinearMath","libBulletDynamics","libBulletCollision","librecord","vpx","libprofilerext","libfacebookext.lib","gameroomext"]
+            excludeSymbols: ["ProfilerExt","FacebookExt","GameroomExt"]
+            libs: ["libphysics_2d.lib","librecord_null.lib","libprofilerext_null.lib"]
+            linkFlags: []
+
+    x86_64-win32:
+        context:
+            excludeLibs: ["libphysics","libLinearMath","libBulletDynamics","libBulletCollision","librecord","vpx","libprofilerext","libfacebookext.lib","gameroomext"]
+            excludeSymbols: ["ProfilerExt","FacebookExt","GameroomExt"]
+            libs: ["libphysics_2d.lib","librecord_null.lib","libprofilerext_null.lib"]
+            linkFlags: []
+
+    armv7-android:
+        context:
+            excludeLibs: ["engine","physics","LinearMath","BulletDynamics","BulletCollision","record","vpx","profilerext","facebookext"]
+            excludeJars: ["(.*)/facebooksdk.jar","(.*)/facebook_android.jar"]
+            excludeSymbols: ["ProfilerExt","FacebookExt"]
+            libs: ["engine_release","physics_2d","record_null","profilerext_null"]
+            linkFlags: []
+
+    armv7-ios:
+        context:
+            excludeLibs: ["engine","physics","LinearMath","BulletDynamics","BulletCollision","record","vpx","profilerext","facebookext"]
+            excludeSymbols: ["ProfilerExt","FacebookExt"]
+            libs: ["engine_release","physics_2d","record_null","profilerext_null"]
+            linkFlags: []
+
+    arm64-ios:
+        context:
+            excludeLibs: ["engine","physics","LinearMath","BulletDynamics","BulletCollision","record","vpx","profilerext","facebookext"]
+            excludeSymbols: ["ProfilerExt","FacebookExt"]
+            libs: ["engine_release","physics_2d","record_null","profilerext_null"]
+            linkFlags: []
+

@@ -1,0 +1,43 @@
+go.property("type", 0)
+
+function init(self)
+	self.obstacle_running = 1
+
+	local r = math.random(1, 2)
+	local direction = 360
+
+	if r == 1 then
+		direction = 360
+	else 
+		direction = -360
+	end
+
+
+	if self.type == 1 then
+		go.animate(".", "euler.z", go.PLAYBACK_LOOP_FORWARD, direction,  go.EASING_LINEAR, 1) 		-- flat half
+	elseif self.type == 2 then
+		go.animate(".", "euler.z", go.PLAYBACK_LOOP_FORWARD, direction,  go.EASING_LINEAR, 1.5) 	-- flat double
+	elseif self.type == 3 then
+		go.animate(".", "euler.z", go.PLAYBACK_LOOP_FORWARD, direction,  go.EASING_LINEAR, 0.65)	-- flat single
+	elseif self.type == 4 then
+		go.animate(".", "euler.z", go.PLAYBACK_LOOP_FORWARD, direction, go.EASING_INOUTQUAD, 1.4)	-- spiked half
+	elseif self.type == 5 then
+		go.animate(".", "euler.z", go.PLAYBACK_LOOP_FORWARD, direction, go.EASING_INOUTQUAD, 1.6) 	-- spiked double
+	elseif self.type == 6 then
+		go.animate(".", "euler.z", go.PLAYBACK_LOOP_FORWARD, direction, go.EASING_INOUTQUAD, 0.75 + math.random())  -- spiked single
+	elseif self.type == 7 then
+		go.animate(".", "euler.z", go.PLAYBACK_LOOP_FORWARD, direction, go.EASING_INOUTQUAD, 1.4)  -- cog half
+	elseif self.type == 8 then
+		go.animate(".", "euler.z", go.PLAYBACK_LOOP_FORWARD, direction, go.EASING_INOUTQUAD, 1.6)  -- cog double
+	elseif self.type == 9 then
+		go.animate(".", "euler.z", go.PLAYBACK_LOOP_FORWARD, direction, go.EASING_INOUTQUAD, 0.75)  -- cog single
+	end
+end
+
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("contact_point_response") then
+		self.obstacle_running = 0
+		msg.post("/game#game", "collided")
+  	end
+end

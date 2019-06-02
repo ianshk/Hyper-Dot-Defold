@@ -1,0 +1,1008 @@
+local SCREEN_WIDTH = tonumber(sys.get_config("display.width"))
+local SCREEN_HEIGHT = tonumber(sys.get_config("display.height"))
+local SAVE_DATA_PATH = sys.get_save_file(sys.get_config("project.title"), "savedata")
+local DRAW_TARGETS = 10
+local MAX_COLORS = 20
+local START_NO_TARGETS = 10
+local MAX_TARGET_CAP = 150
+
+
+local function set_gradient(self)
+	msg.post("/gradient", "changecolor", {index = self.color_index})
+end
+
+
+local function init_progress(self)
+	msg.post("/ui#ui", "uioff")
+	msg.post("/ui#ui", "setlevels", {current_level = self.level})
+end
+
+
+local function init_targets(self)
+	local start_target_pos = self.starting_point
+	local number_of_targets = DRAW_TARGETS
+	local target_selection = math.random(1, 6)
+	local target_factory = "/factories#target_1"
+
+	self.boss_target_selection = target_selection
+
+	if target_selection == 1 then
+		target_factory = "/factories#target_1"
+	elseif target_selection == 2 then
+		target_factory = "/factories#target_2"
+	elseif target_selection == 3 then
+		target_factory = "/factories#target_3"
+	elseif target_selection == 4 then
+		target_factory = "/factories#target_4"
+	elseif target_selection == 5 then
+		target_factory = "/factories#target_5"
+	elseif target_selection == 6 then
+		target_factory = "/factories#target_6"
+	end
+
+	local target = { id = factory.create(target_factory, start_target_pos) }
+	go.set_rotation(vmath.quat_rotation_z(math.rad(45)), target.id)
+	table.insert(self.all_obs, target)
+
+	for i = 1,number_of_targets do
+		local start_pos = start_target_pos
+		local start_x = start_pos.x
+		local start_y = start_pos.y
+
+		random_angle = math.random(50, 110)
+		random_angle = random_angle - 90
+
+		-- Randomise distance
+		if self.boss_level == 1 then 
+			self.ball_distance = math.random(300, 350)
+		else
+			self.ball_distance = math.random(260, 290)
+		end
+
+		local target_pos = vmath.vector3(start_x + self.ball_distance * math.sin(math.rad(random_angle)), start_y + self.ball_distance * math.cos(math.rad(random_angle)), 0)
+		start_target_pos = target_pos
+
+		-- Boss levels just keep one color 
+		if self.boss_level == 0 then
+			target_selection = math.random(1, 6)
+		end
+
+		if target_selection == 1 then
+			target_factory = "/factories#target_1"
+		elseif target_selection == 2 then
+			target_factory = "/factories#target_2"
+		elseif target_selection == 3 then
+			target_factory = "/factories#target_3"
+		elseif target_selection == 4 then
+			target_factory = "/factories#target_4"
+		elseif target_selection == 5 then
+			target_factory = "/factories#target_5"
+		elseif target_selection == 6 then
+			target_factory = "/factories#target_6"
+		end
+
+		
+		-- rotate 45 degrees, as 0 rotation saved space in the atlas
+		target = { id = factory.create(target_factory, target_pos) }
+		go.set_rotation(vmath.quat_rotation_z(math.rad(45)), target.id)
+
+		-- Obstacles
+		
+		local selection = 0
+		local obs_factory = "/factories#obstacle_1y"
+
+		-- If boss level just use 7-9 (cogs)
+		if self.boss_level == 1 then
+			selection = math.random(7, 9)
+		else
+			selection = math.random(1,6)
+		end
+
+		-- Yellow obstacles
+		if selection == 1 and target_selection == 1 then		-- flat half
+			obs_factory = "/factories#obstacle_1y"
+			type = 1
+		elseif selection == 2 and target_selection == 1 then	-- flat double
+			obs_factory = "/factories#obstacle_2y"
+			type = 2
+		elseif selection == 3 and target_selection == 1 then	-- flat single
+			obs_factory = "/factories#obstacle_3y"
+			type = 3
+		elseif selection == 4 and target_selection == 1 then	-- spiked half
+			obs_factory = "/factories#obstacle_4y"
+			type = 4
+		elseif selection == 5 and target_selection == 1 then	-- spiked double
+			obs_factory = "/factories#obstacle_5y"
+			type = 5
+		elseif selection == 6 and target_selection == 1 then	-- spiked single
+			obs_factory = "/factories#obstacle_6y"
+			type = 6
+		elseif selection == 7 and target_selection == 1 then	-- cog half
+			obs_factory = "/factories#obstacle_7y"
+			type = 7
+		elseif selection == 8 and target_selection == 1 then	-- cog double
+			obs_factory = "/factories#obstacle_8y"
+			type = 8
+		elseif selection == 9 and target_selection == 1 then	-- cog single
+			obs_factory = "/factories#obstacle_9y"
+			type = 9
+		
+		-- Orange obstacles
+		elseif selection == 1 and target_selection == 2 then		-- flat half
+			obs_factory = "/factories#obstacle_1o"
+			type = 1
+		elseif selection == 2 and target_selection == 2 then	-- flat double
+			obs_factory = "/factories#obstacle_2o"
+			type = 2
+		elseif selection == 3 and target_selection == 2 then	-- flat single
+			obs_factory = "/factories#obstacle_3o"
+			type = 3
+		elseif selection == 4 and target_selection == 2 then	-- spiked half
+			obs_factory = "/factories#obstacle_4o"
+			type = 4
+		elseif selection == 5 and target_selection == 2 then	-- spiked double
+			obs_factory = "/factories#obstacle_5o"
+			type = 5
+		elseif selection == 6 and target_selection == 2 then	-- spiked single
+			obs_factory = "/factories#obstacle_6o"
+			type = 6
+		elseif selection == 7 and target_selection == 2 then	-- cog half
+			obs_factory = "/factories#obstacle_7o"
+			type = 7
+		elseif selection == 8 and target_selection == 2 then	-- cog double
+			obs_factory = "/factories#obstacle_8o"
+			type = 8
+		elseif selection == 9 and target_selection == 2 then	-- cog single
+			obs_factory = "/factories#obstacle_9o"
+			type = 9
+
+		-- Green obstacles
+		elseif selection == 1 and target_selection == 3 then		-- flat half
+			obs_factory = "/factories#obstacle_1g"
+			type = 1
+		elseif selection == 2 and target_selection == 3 then	-- flat double
+			obs_factory = "/factories#obstacle_2g"
+			type = 2
+		elseif selection == 3 and target_selection == 3 then	-- flat single
+			obs_factory = "/factories#obstacle_3g"
+			type = 3
+		elseif selection == 4 and target_selection == 3 then	-- spiked half
+			obs_factory = "/factories#obstacle_4g"
+			type = 4
+		elseif selection == 5 and target_selection == 3 then	-- spiked double
+			obs_factory = "/factories#obstacle_5g"
+			type = 5
+		elseif selection == 6 and target_selection == 3 then	-- spiked single
+			obs_factory = "/factories#obstacle_6g"
+			type = 6
+		elseif selection == 7 and target_selection == 3 then	-- cog half
+			obs_factory = "/factories#obstacle_7g"
+			type = 7
+		elseif selection == 8 and target_selection == 3 then	-- cog double
+			obs_factory = "/factories#obstacle_8g"
+			type = 8
+		elseif selection == 9 and target_selection == 3 then	-- cog single
+			obs_factory = "/factories#obstacle_9g"
+			type = 9
+
+		-- Purple obstacles
+		elseif selection == 1 and target_selection == 4 then		-- flat half
+			obs_factory = "/factories#obstacle_1pu"
+			type = 1
+		elseif selection == 2 and target_selection == 4 then	-- flat double
+			obs_factory = "/factories#obstacle_2pu"
+			type = 2
+		elseif selection == 3 and target_selection == 4 then	-- flat single
+			obs_factory = "/factories#obstacle_3pu"
+			type = 3
+		elseif selection == 4 and target_selection == 4 then	-- spiked half
+			obs_factory = "/factories#obstacle_4pu"
+			type = 4
+		elseif selection == 5 and target_selection == 4 then	-- spiked double
+			obs_factory = "/factories#obstacle_5pu"
+			type = 5
+		elseif selection == 6 and target_selection == 4 then	-- spiked single
+			obs_factory = "/factories#obstacle_6pu"
+			type = 6
+		elseif selection == 7 and target_selection == 4 then	-- cog half
+			obs_factory = "/factories#obstacle_7pu"
+			type = 7
+		elseif selection == 8 and target_selection == 4 then	-- cog double
+			obs_factory = "/factories#obstacle_8pu"
+			type = 8
+		elseif selection == 9 and target_selection == 4 then	-- cog single
+			obs_factory = "/factories#obstacle_9pu"
+			type = 9
+
+		-- Blue obstacles
+		elseif selection == 1 and target_selection == 5 then		-- flat half
+			obs_factory = "/factories#obstacle_1b"
+			type = 1
+		elseif selection == 2 and target_selection == 5 then	-- flat double
+			obs_factory = "/factories#obstacle_2b"
+			type = 2
+		elseif selection == 3 and target_selection == 5 then	-- flat single
+			obs_factory = "/factories#obstacle_3b"
+			type = 3
+		elseif selection == 4 and target_selection == 5 then	-- spiked half
+			obs_factory = "/factories#obstacle_4b"
+			type = 4
+		elseif selection == 5 and target_selection == 5 then	-- spiked double
+			obs_factory = "/factories#obstacle_5b"
+			type = 5
+		elseif selection == 6 and target_selection == 5 then	-- spiked single
+			obs_factory = "/factories#obstacle_6b"
+			type = 6
+		elseif selection == 7 and target_selection == 5 then	-- cog half
+			obs_factory = "/factories#obstacle_7b"
+			type = 7
+		elseif selection == 8 and target_selection == 5 then	-- cog double
+			obs_factory = "/factories#obstacle_8b"
+			type = 8
+		elseif selection == 9 and target_selection == 5 then	-- cog single
+			obs_factory = "/factories#obstacle_9b"
+			type = 9
+
+		-- Pink obstacles
+		elseif selection == 1 and target_selection == 6 then		-- flat half
+			obs_factory = "/factories#obstacle_1pi"
+			type = 1
+		elseif selection == 2 and target_selection == 6 then	-- flat double
+			obs_factory = "/factories#obstacle_2pi"
+			type = 2
+		elseif selection == 3 and target_selection == 6 then	-- flat single
+			obs_factory = "/factories#obstacle_3pi"
+			type = 3
+		elseif selection == 4 and target_selection == 6 then	-- spiked half
+			obs_factory = "/factories#obstacle_4pi"
+			type = 4
+		elseif selection == 5 and target_selection == 6 then	-- spiked double
+			obs_factory = "/factories#obstacle_5pi"
+			type = 5
+		elseif selection == 6 and target_selection == 6 then	-- spiked single
+			obs_factory = "/factories#obstacle_6pi"
+			type = 6
+		elseif selection == 7 and target_selection == 6 then	-- cog half
+			obs_factory = "/factories#obstacle_7pi"
+			type = 7
+		elseif selection == 8 and target_selection == 6 then	-- cog double
+			obs_factory = "/factories#obstacle_8pi"
+			type = 8
+		elseif selection == 9 and target_selection == 6 then	-- cog single
+			obs_factory = "/factories#obstacle_9pi"
+			type = 9
+		end
+
+		-- Add an obstacle and attach it as a child sprite
+		local obstacle = { id = factory.create(obs_factory, target_pos, nil, { type = type }) }
+		msg.post(obstacle.id, "set_parent", { parent_id = target.id })
+
+		local pchild_id = { parent_id = target.id, child_id = obstacle.id, color =  self.obs_colors[target_selection]}
+		table.insert(self.parent_child_ids, pchild_id)
+		table.insert(self.all_obs, target)
+	end
+end
+
+
+local function find_next_target_from_player(self)
+	local y_positions = {}
+
+	-- Get all the y positions so can sort the table
+	for i in ipairs(self.all_obs) do 
+		local target_pos = go.get_position(self.all_obs[i].id)
+		table.insert(y_positions, target_pos.y)
+	end
+
+	table.sort(y_positions)
+
+	local player_pos = go.get_position("player")
+
+	-- Find the next highest from current y
+	local current_y = player_pos.y
+
+	-- Loop to find next
+	for i in ipairs(self.all_obs) do 
+		local target_pos = go.get_position(self.all_obs[i].id)
+		if target_pos.y > current_y then
+			self.next_target = self.all_obs[i].id
+			self.next_target_pos = target_pos
+			break
+		end
+	end
+end
+
+
+local function init_player(self)
+	go.set_position(self.starting_point, "player")
+	self.current_player_position = self.starting_point
+	find_next_target_from_player(self)
+
+	local spritep = go.get_position("player#sprite")
+end
+
+
+local function set_camera(self)
+	local camera = go.get_position("camera")
+	go.set_position(camera, "camera")
+end
+
+
+function init(self)
+
+
+	--msg.post("@system:", "toggle_physics_debug")
+	--msg.post("@system:", "toggle_physics_debug")
+	--msg.post("@system:", "toggle_profile")
+
+	self.angle = 0
+	self.ball_distance = 250
+
+	-- Flags
+	self.switched = 0
+	self.pressed = 0
+	self.jumping = 0
+	self.level_complete = 0
+
+	self.player_alive = 0
+	self.player_collided = 0
+	self.score = 0
+	self.percentage = 0
+
+	print(SAVE_DATA_PATH)
+	
+	-- Load Save game data
+	self.save_data = sys.load(SAVE_DATA_PATH) or {}
+	-- Level
+	self.save_data.level = self.save_data.level or 1
+	self.level = self.save_data.level
+
+	-- Number of targets start at 15 for level 1
+	self.save_data.max_targets = self.save_data.max_targets or START_NO_TARGETS
+	self.max_targets = self.save_data.max_targets
+	-- Color index
+	self.save_data.color_index = self.save_data.color_index or 1
+	self.color_index = self.save_data.color_index
+
+	-- Music data
+	self.save_data.music_on = self.save_data.music_on or 1
+	self.music_on = self.save_data.music_on
+
+	-- Ad counter (show every 8 retries)
+	self.save_data.ad_count = self.save_data.ad_count or 0
+	self.ad_count = self.save_data.ad_count
+
+	-- Purchase paid
+	self.save_data.purchase_paid = self.save_data.purchase_paid or 0
+	self.purchase_paid = self.save_data.purchase_paid
+
+
+	print("Level:" .. self.level)
+	print("Max Targets:" .. self.max_targets)
+	print("Music on:" .. self.music_on)
+	print("Ad count:" .. self.ad_count)
+	print("Purchase paid:" .. self.purchase_paid)
+
+	-- Every 5th level give a boss level to switch it up a bit
+	if self.level % 5 == 0 then
+		self.boss_level = 1
+	else
+		self.boss_level = 0
+	end
+
+	self.boss_target_selection = 0
+
+	-- All objects (used for moving all objects)
+	self.all_obs = {}
+
+	-- Parent child id relationship table (looks like can't get a child id of an instance)
+	self.parent_child_ids = {}
+
+	self.starting_point = vmath.vector3(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 300, 0)
+	self.next_target_pos = self.starting_point
+
+	self.fade_color = vmath.vector4(0,0,0,0)
+	
+	self.obs_colors = { vmath.vector4(0xff / 0xff, 0xe6 / 0xff, 0x2b / 0xff, 1.0), --#FFE62B (neon yellow)
+						vmath.vector4(0xfa / 0xff, 0x76 / 0xff, 0x4b / 0xff, 1.0), --#FA764B (neon orange) 
+						vmath.vector4(0x5f / 0xff, 0xfe / 0xff, 0xe2 / 0xff, 1.0), --#5FFEE2 (neon green)
+						vmath.vector4(0xf2 / 0xff, 0x22 / 0xff, 0xff / 0xff, 1.0), --#F222FF (neon purple)
+						vmath.vector4(0x01 / 0xff, 0xcc / 0xff, 0xff / 0xff, 1.0), --#01CCFF (neon blue)
+						vmath.vector4(0xff / 0xff, 0x29 / 0xff, 0x75 / 0xff, 1.0)} --#FF2975 (neon pink)
+
+	self.target_index = 1
+
+	msg.post(".", "acquire_input_focus")
+	msg.post("@render:/", "clear_color", { color = vmath.vector4(0x00 / 0xff, 0x00 / 0xff, 0x00 / 0xff, 1.0) })
+
+	set_gradient(self)
+	init_progress(self)
+	init_targets(self)
+	init_player(self)
+
+	self.player_alive = 1
+	
+	local cam = go.get_position("camera")
+	set_camera(self)
+end
+
+
+local function restart_level(self)
+	msg.post("controller:/controller#controller", "reload_game")
+end
+
+
+local function go_home(self)
+	msg.post("controller:/controller#controller", "show_menu")
+end
+
+
+local function update_progress(self)
+	self.percentage = math.ceil(self.score / self.max_targets * 100.0);
+	if self.percentage > 100 then
+		self.percentage = 100
+	end
+
+	msg.post("/ui#ui", "updateprogress", {progress = self.max_targets})
+end
+
+
+local function add_new_target(self)
+	local current_target = self.score + DRAW_TARGETS
+	if current_target < self.max_targets then 
+
+		local highest_target = vmath.vector3(0,0,0)
+
+		-- Get target with the highest Y position
+		for i in ipairs(self.all_obs) do 
+			local target_pos = go.get_position(self.all_obs[i].id)
+			local target_y_pos = target_pos.y
+
+			if target_y_pos > highest_target.y then
+				highest_target = target_pos
+			end
+		end
+
+		random_angle = math.random(50, 110)
+		random_angle = random_angle - 90
+
+		-- Randomise ball distance
+		if self.boss_level == 1 then 
+			self.ball_distance = math.random(300, 350)
+		else
+			self.ball_distance = math.random(260, 290)
+		end
+
+		local target_pos = vmath.vector3(highest_target.x + self.ball_distance * math.sin(math.rad(random_angle)), highest_target.y + self.ball_distance * math.cos(math.rad(random_angle)), 0)
+		start_target_pos = target_pos
+
+		local target_selection = 0
+
+		if self.boss_level == 1 then
+			target_selection = self.boss_target_selection
+		else 
+			target_selection = math.random(1, 6)
+		end 
+
+		local target_factory = "/factories#target_1"
+
+		if target_selection == 1 then
+			target_factory = "/factories#target_1" -- yellow
+		elseif target_selection == 2 then
+			target_factory = "/factories#target_2" -- orange
+		elseif target_selection == 3 then
+			target_factory = "/factories#target_3" -- green
+		elseif target_selection == 4 then
+			target_factory = "/factories#target_4" -- purple
+		elseif target_selection == 5 then
+			target_factory = "/factories#target_5" -- blue
+		elseif target_selection == 6 then
+			target_factory = "/factories#target_6"	-- pink
+		end
+
+		local target = { id = factory.create(target_factory, target_pos) }
+		go.set_rotation(vmath.quat_rotation_z(math.rad(45)), target.id)
+
+		-- Obstacles
+		
+		local obs_factory = "/factories#obstacle_1y"
+
+		-- If boss level just use 7-9 (cogs)
+		if self.boss_level == 1 then
+			selection = math.random(7, 9)
+		else
+			selection = math.random(1,6)
+		end
+
+		-- Yellow obstacles
+		if selection == 1 and target_selection == 1 then		-- flat half
+			obs_factory = "/factories#obstacle_1y"
+			type = 1
+		elseif selection == 2 and target_selection == 1 then	-- flat double
+			obs_factory = "/factories#obstacle_2y"
+			type = 2
+		elseif selection == 3 and target_selection == 1 then	-- flat single
+			obs_factory = "/factories#obstacle_3y"
+			type = 3
+		elseif selection == 4 and target_selection == 1 then	-- spiked half
+			obs_factory = "/factories#obstacle_4y"
+			type = 4
+		elseif selection == 5 and target_selection == 1 then	-- spiked double
+			obs_factory = "/factories#obstacle_5y"
+			type = 5
+		elseif selection == 6 and target_selection == 1 then	-- spiked single
+			obs_factory = "/factories#obstacle_6y"
+			type = 6
+		elseif selection == 7 and target_selection == 1 then	-- cog half
+			obs_factory = "/factories#obstacle_7y"
+			type = 7
+		elseif selection == 8 and target_selection == 1 then	-- cog double
+			obs_factory = "/factories#obstacle_8y"
+			type = 8
+		elseif selection == 9 and target_selection == 1 then	-- cog single
+			obs_factory = "/factories#obstacle_9y"
+			type = 9
+		
+		-- Orange obstacles
+		elseif selection == 1 and target_selection == 2 then		-- flat half
+			obs_factory = "/factories#obstacle_1o"
+			type = 1
+		elseif selection == 2 and target_selection == 2 then	-- flat double
+			obs_factory = "/factories#obstacle_2o"
+			type = 2
+		elseif selection == 3 and target_selection == 2 then	-- flat single
+			obs_factory = "/factories#obstacle_3o"
+			type = 3
+		elseif selection == 4 and target_selection == 2 then	-- spiked half
+			obs_factory = "/factories#obstacle_4o"
+			type = 4
+		elseif selection == 5 and target_selection == 2 then	-- spiked double
+			obs_factory = "/factories#obstacle_5o"
+			type = 5
+		elseif selection == 6 and target_selection == 2 then	-- spiked single
+			obs_factory = "/factories#obstacle_6o"
+			type = 6
+		elseif selection == 7 and target_selection == 2 then	-- cog half
+			obs_factory = "/factories#obstacle_7o"
+			type = 7
+		elseif selection == 8 and target_selection == 2 then	-- cog double
+			obs_factory = "/factories#obstacle_8o"
+			type = 8
+		elseif selection == 9 and target_selection == 2 then	-- cog single
+			obs_factory = "/factories#obstacle_9o"
+			type = 9
+
+		-- Green obstacles
+		elseif selection == 1 and target_selection == 3 then		-- flat half
+			obs_factory = "/factories#obstacle_1g"
+			type = 1
+		elseif selection == 2 and target_selection == 3 then	-- flat double
+			obs_factory = "/factories#obstacle_2g"
+			type = 2
+		elseif selection == 3 and target_selection == 3 then	-- flat single
+			obs_factory = "/factories#obstacle_3g"
+			type = 3
+		elseif selection == 4 and target_selection == 3 then	-- spiked half
+			obs_factory = "/factories#obstacle_4g"
+			type = 4
+		elseif selection == 5 and target_selection == 3 then	-- spiked double
+			obs_factory = "/factories#obstacle_5g"
+			type = 5
+		elseif selection == 6 and target_selection == 3 then	-- spiked single
+			obs_factory = "/factories#obstacle_6g"
+			type = 6
+		elseif selection == 7 and target_selection == 3 then	-- cog half
+			obs_factory = "/factories#obstacle_7g"
+			type = 7
+		elseif selection == 8 and target_selection == 3 then	-- cog double
+			obs_factory = "/factories#obstacle_8g"
+			type = 8
+		elseif selection == 9 and target_selection == 3 then	-- cog single
+			obs_factory = "/factories#obstacle_9g"
+			type = 9
+
+		-- Purple obstacles
+		elseif selection == 1 and target_selection == 4 then		-- flat half
+			obs_factory = "/factories#obstacle_1pu"
+			type = 1
+		elseif selection == 2 and target_selection == 4 then	-- flat double
+			obs_factory = "/factories#obstacle_2pu"
+			type = 2
+		elseif selection == 3 and target_selection == 4 then	-- flat single
+			obs_factory = "/factories#obstacle_3pu"
+			type = 3
+		elseif selection == 4 and target_selection == 4 then	-- spiked half
+			obs_factory = "/factories#obstacle_4pu"
+			type = 4
+		elseif selection == 5 and target_selection == 4 then	-- spiked double
+			obs_factory = "/factories#obstacle_5pu"
+			type = 5
+		elseif selection == 6 and target_selection == 4 then	-- spiked single
+			obs_factory = "/factories#obstacle_6pu"
+			type = 6
+		elseif selection == 7 and target_selection == 4 then	-- cog half
+			obs_factory = "/factories#obstacle_7pu"
+			type = 7
+		elseif selection == 8 and target_selection == 4 then	-- cog double
+			obs_factory = "/factories#obstacle_8pu"
+			type = 8
+		elseif selection == 9 and target_selection == 4 then	-- cog single
+			obs_factory = "/factories#obstacle_9pu"
+			type = 9
+
+		-- Blue obstacles
+		elseif selection == 1 and target_selection == 5 then		-- flat half
+			obs_factory = "/factories#obstacle_1b"
+			type = 1
+		elseif selection == 2 and target_selection == 5 then	-- flat double
+			obs_factory = "/factories#obstacle_2b"
+			type = 2
+		elseif selection == 3 and target_selection == 5 then	-- flat single
+			obs_factory = "/factories#obstacle_3b"
+			type = 3
+		elseif selection == 4 and target_selection == 5 then	-- spiked half
+			obs_factory = "/factories#obstacle_4b"
+			type = 4
+		elseif selection == 5 and target_selection == 5 then	-- spiked double
+			obs_factory = "/factories#obstacle_5b"
+			type = 5
+		elseif selection == 6 and target_selection == 5 then	-- spiked single
+			obs_factory = "/factories#obstacle_6b"
+			type = 6
+		elseif selection == 7 and target_selection == 5 then	-- cog half
+			obs_factory = "/factories#obstacle_7b"
+			type = 7
+		elseif selection == 8 and target_selection == 5 then	-- cog double
+			obs_factory = "/factories#obstacle_8b"
+			type = 8
+		elseif selection == 9 and target_selection == 5 then	-- cog single
+			obs_factory = "/factories#obstacle_9b"
+			type = 9
+
+		-- Pink obstacles
+		elseif selection == 1 and target_selection == 6 then		-- flat half
+			obs_factory = "/factories#obstacle_1pi"
+			type = 1
+		elseif selection == 2 and target_selection == 6 then	-- flat double
+			obs_factory = "/factories#obstacle_2pi"
+			type = 2
+		elseif selection == 3 and target_selection == 6 then	-- flat single
+			obs_factory = "/factories#obstacle_3pi"
+			type = 3
+		elseif selection == 4 and target_selection == 6 then	-- spiked half
+			obs_factory = "/factories#obstacle_4pi"
+			type = 4
+		elseif selection == 5 and target_selection == 6 then	-- spiked double
+			obs_factory = "/factories#obstacle_5pi"
+			type = 5
+		elseif selection == 6 and target_selection == 6 then	-- spiked single
+			obs_factory = "/factories#obstacle_6pi"
+			type = 6
+		elseif selection == 7 and target_selection == 6 then	-- cog half
+			obs_factory = "/factories#obstacle_7pi"
+			type = 7
+		elseif selection == 8 and target_selection == 6 then	-- cog double
+			obs_factory = "/factories#obstacle_8pi"
+			type = 8
+		elseif selection == 9 and target_selection == 6 then	-- cog single
+			obs_factory = "/factories#obstacle_9pi"
+			type = 9
+		end
+
+
+		local obstacle = { id = factory.create(obs_factory, target_pos, nil, { type = type }) }
+		msg.post(obstacle.id, "set_parent", { parent_id = target.id })
+
+		--local url = msg.url(nil, obstacle.id, "sprite")
+		--sprite.set_constant(url, "tint", self.obs_colors[target_selection])
+		
+		--local pchild_id = { parent_id = target.id, child_id = obstacle.id }
+		local pchild_id = { parent_id = target.id, child_id = obstacle.id, color =  self.obs_colors[target_selection]}
+		table.insert(self.parent_child_ids, pchild_id)
+		table.insert(self.all_obs, target)
+	end
+end
+
+
+local function clean_up_targets(self)
+	local camera = go.get_position("camera")
+	local list_size = #self.all_obs
+	local i = 1
+
+	while i <= list_size do
+		local obj_pos = go.get_position(self.all_obs[i].id)
+		if camera.y > obj_pos.y then
+			go.delete(self.all_obs[i].id, true)
+			table.remove(self.all_obs, i)
+			list_size = list_size - 1
+		else
+			i = i + 1
+		end
+	end
+end
+
+
+local function update_score(self)
+	self.score = self.score + 1
+end
+
+
+local function fade_out_obstacle(self)
+	for i in ipairs(self.parent_child_ids) do
+		local parent_id = self.parent_child_ids[i].parent_id
+		local child_id = self.parent_child_ids[i].child_id
+
+		if(parent_id == self.next_target) then
+			-- Delete from the parent and child table
+			for i in ipairs(self.parent_child_ids) do 
+				if self.parent_child_ids[i].parent_id == parent_id then
+					self.fade_color = self.parent_child_ids[i].color
+					table.remove(self.parent_child_ids, i)
+					break
+				end
+			end
+
+			local fade_color = self.fade_color
+			local r = fade_color.x
+			local g = fade_color.y
+			local b = fade_color.z
+			local ab = 0
+
+			local url = msg.url(nil, child_id, "sprite")
+			go.animate(url, "tint", go.PLAYBACK_ONCE_FORWARD, vmath.vector4(r, g, b, ab), go.EASING_LINEAR, 0.2, 0, function(self, url, property)
+				go.delete(child_id)
+			end)
+		end
+	end
+end
+
+
+local function target_feedback(self)
+	if self.player_alive == 1 then
+		local feedback = { id = factory.create("factories#target_ring") }
+		local url = msg.url(nil, feedback.id, "sprite")
+
+		local player_pos = self.next_target_pos
+		local fade_color = self.fade_color
+
+		local r = fade_color.x
+		local g = fade_color.y
+		local b = fade_color.z
+		local aa = 1.0
+		local ab = 0
+
+		go.set(feedback.id, "position", player_pos)
+		sprite.set_constant(url, "tint", vmath.vector4(r,g,b,aa))
+		go.animate(feedback.id, "scale", go.PLAYBACK_ONCE_FORWARD, 1.8, go.EASING_OUTINCUBIC, 0.8, 0)
+		go.animate(url, "tint", go.PLAYBACK_ONCE_FORWARD, vmath.vector4(r,g,b,ab), go.EASING_LINEAR, 0.8, 0, function(self, url, property)
+			go.delete(feedback.id)
+		end)
+	end
+end
+
+
+local function start_scroll(self)
+	msg.post("/camera", "start")
+end
+
+
+local function stop_scroll(self)
+	msg.post("/camera", "stop")
+end
+
+
+local function stop_player(self)
+	go.cancel_animations("player", "position")
+end
+
+
+local function level_complete(self)
+	-- Update color index
+	self.color_index = self.color_index + 1
+
+	-- Reset colors
+	if self.color_index > 10 then
+		self.color_index = 1
+	end
+
+	-- Update level and targets and save
+	self.level = self.level + 1
+	self.max_targets = self.max_targets + 1
+
+	if self.max_targets > MAX_TARGET_CAP then
+		self.max_targets = MAX_TARGET_CAP
+	end
+
+ 	-- Save level data
+	self.save_data.level = self.level
+	self.save_data.max_targets = self.max_targets
+
+	-- Save color index
+	self.save_data.color_index = self.color_index
+	sys.save(SAVE_DATA_PATH, self.save_data)
+
+	msg.post("/ui#ui", "complete")
+end
+
+
+local function finished_move(self, url, property)
+	if self.player_collided == 0 then
+		if self.score + 1 == self.max_targets then
+			self.level_complete = 1
+			stop_scroll(self)
+			stop_player(self)
+			update_score(self)
+			update_progress(self)
+			msg.post("/player", "shoot")
+			timer.delay(0.1, false, level_complete)
+		else 
+			self.jumping = 0
+			self.current_player_position = self.next_target_pos
+			msg.post("/player", "trailstop")
+			update_score(self)
+			update_progress(self)
+
+			if self.score > 0 then
+				start_scroll(self)
+			end
+		end
+	end
+end
+
+
+local function check_hit(self)
+	if self.player_alive == 1 then
+		fade_out_obstacle(self)
+		add_new_target(self)
+		clean_up_targets(self)
+	end
+end
+
+
+local function move_player(self, dt)
+	 go.animate("player", "position", go.PLAYBACK_ONCE_FORWARD, self.next_target_pos, go.EASING_OUTCUBIC, 0.4, 0, finished_move)	 
+	 if self.music_on == 1 then
+		 --msg.post("/sound#jump", "play_sound", {gain = 0.9})
+		 sound.play("/sound#jump")
+	 end
+	 msg.post("/player", "trail")
+	 timer.delay(0.2, false, check_hit)
+	 --timer.delay(0.3, false, spawn_score_update)
+	 timer.delay(0.3, false, target_feedback)
+end
+
+
+local function game_over(self)
+	msg.post("/ui#ui", "gameover", { percentage = self.percentage })
+	--go.delete("player")
+end
+
+
+local function player_died(self)
+	if self.player_collided == 0 then
+		self.player_collided = 1
+		self.player_alive = 0
+		stop_scroll(self)
+		stop_player(self)
+		if self.music_on == 1 then
+			--msg.post("/sound#explode", "play_sound", {gain = 0.5})
+			sound.play("/sound#explode", {gain = 0.6})
+		end
+		
+		if self.purchase_paid == 0 then
+			-- cycle ad count, every 10 deaths
+			if self.ad_count == 9 then
+				print("Game - SHOW VIDEO ADD")
+				msg.post("/ui#ui", "runvideoad")
+				self.ad_count = 0
+			else
+				self.ad_count = self.ad_count + 1
+			end
+
+			self.save_data.ad_count = self.ad_count
+			sys.save(SAVE_DATA_PATH, self.save_data)
+		end
+
+		msg.post("/player", "shrink")
+		msg.post("/player", "die")
+		timer.delay(0.6, false, game_over)
+	end
+end
+
+
+local function player_can_jump(self)
+	self.jumping = 0
+	self.player_alive = 1
+	self.player_collided = 0
+	msg.post("/player", "trailstop")
+	go.set_position(self.current_player_position, "player")
+	go.set("player", "scale", 1)
+	msg.post("/ui#ui", "jumptexton")
+end
+
+
+local function player_revived(self)
+	msg.post("/ui#ui", "uioff")
+	timer.delay(0.1, false, player_can_jump)
+end
+
+
+local function shift_camera(self)
+	local player_pos = self.next_target_pos
+	msg.post("/camera", "shift", { position = player_pos })
+end
+
+
+local function check_player_off_camera(self)
+	local player_pos = go.get_position("player")
+	local camera_pos = go.get_position("camera")
+
+	if camera_pos.y >= player_pos.y then
+		msg.post("/ui#ui", "nosecondchance")
+		player_died(self)
+	end
+end
+
+
+function update(self, dt)
+	if self.player_alive == 1 then
+		check_player_off_camera(self)
+	end
+
+	if self.switched == 1 then
+		self.switched = 0;
+		msg.post("/ui#ui", "jumptextoff")
+		if self.player_alive == 1 and self.level_complete == 0 then
+			if self.jumping == 0 then
+				self.jumping = 1
+				find_next_target_from_player(self)
+				move_player(self, dt)
+				shift_camera(self)
+				-- add_new_target(self)
+				-- clean_up_targets(self)
+			end
+		end
+	end
+end
+
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("collided") then
+		player_died(self)
+	elseif message_id == hash("restart") then
+		restart_level(self)
+	elseif message_id == hash("home") then
+		go_home(self)
+	elseif message_id == hash("revive") then
+		player_revived(self)
+	end
+end
+
+
+function on_input(self, action_id, action)
+	if action_id == hash("left_button") and action.pressed then
+	--if action_id == hash("touch") and action.pressed then
+		--if action.pressed then
+			self.switched = 1
+		--end
+	end
+end
+
+
+local function remove_all(self)
+	-- Remove generated object and child objects
+	for i,p in ipairs(self.all_obs) do
+		go.delete(p, true)
+		self.all_obs[i] = nil
+	end
+
+	for i,p in ipairs(self.parent_child_ids) do
+		self.parent_child_ids[i] = nil
+	end
+end
+
+
+function final(self)
+	go.delete("player")
+	remove_all(self)
+	msg.post(".", "release_input_focus")
+end

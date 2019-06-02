@@ -1,0 +1,192 @@
+images {
+  image: "/images/player.png"
+}
+images {
+  image: "/images/target_1.png"
+}
+images {
+  image: "/images/target_2.png"
+}
+images {
+  image: "/images/target_3.png"
+}
+images {
+  image: "/images/target_4.png"
+}
+images {
+  image: "/images/target_5.png"
+}
+images {
+  image: "/images/target_6.png"
+}
+images {
+  image: "/images/targetring.png"
+}
+images {
+  image: "/images/particle1.png"
+}
+images {
+  image: "/images/obstacle_1b.png"
+}
+images {
+  image: "/images/obstacle_1g.png"
+}
+images {
+  image: "/images/obstacle_1o.png"
+}
+images {
+  image: "/images/obstacle_1pi.png"
+}
+images {
+  image: "/images/obstacle_1pu.png"
+}
+images {
+  image: "/images/obstacle_1y.png"
+}
+images {
+  image: "/images/obstacle_2b.png"
+}
+images {
+  image: "/images/obstacle_2g.png"
+}
+images {
+  image: "/images/obstacle_2o.png"
+}
+images {
+  image: "/images/obstacle_2pi.png"
+}
+images {
+  image: "/images/obstacle_2pu.png"
+}
+images {
+  image: "/images/obstacle_2y.png"
+}
+images {
+  image: "/images/obstacle_3b.png"
+}
+images {
+  image: "/images/obstacle_3g.png"
+}
+images {
+  image: "/images/obstacle_3o.png"
+}
+images {
+  image: "/images/obstacle_3pi.png"
+}
+images {
+  image: "/images/obstacle_3pu.png"
+}
+images {
+  image: "/images/obstacle_3y.png"
+}
+images {
+  image: "/images/obstacle_4b.png"
+}
+images {
+  image: "/images/obstacle_4g.png"
+}
+images {
+  image: "/images/obstacle_4o.png"
+}
+images {
+  image: "/images/obstacle_4pi.png"
+}
+images {
+  image: "/images/obstacle_4pu.png"
+}
+images {
+  image: "/images/obstacle_4y.png"
+}
+images {
+  image: "/images/obstacle_5b.png"
+}
+images {
+  image: "/images/obstacle_5g.png"
+}
+images {
+  image: "/images/obstacle_5o.png"
+}
+images {
+  image: "/images/obstacle_5pi.png"
+}
+images {
+  image: "/images/obstacle_5pu.png"
+}
+images {
+  image: "/images/obstacle_5y.png"
+}
+images {
+  image: "/images/obstacle_6b.png"
+}
+images {
+  image: "/images/obstacle_6g.png"
+}
+images {
+  image: "/images/obstacle_6o.png"
+}
+images {
+  image: "/images/obstacle_6pi.png"
+}
+images {
+  image: "/images/obstacle_6pu.png"
+}
+images {
+  image: "/images/obstacle_6y.png"
+}
+images {
+  image: "/images/obstacle_7b.png"
+}
+images {
+  image: "/images/obstacle_7g.png"
+}
+images {
+  image: "/images/obstacle_7o.png"
+}
+images {
+  image: "/images/obstacle_7pi.png"
+}
+images {
+  image: "/images/obstacle_7pu.png"
+}
+images {
+  image: "/images/obstacle_7y.png"
+}
+images {
+  image: "/images/obstacle_8b.png"
+}
+images {
+  image: "/images/obstacle_8g.png"
+}
+images {
+  image: "/images/obstacle_8o.png"
+}
+images {
+  image: "/images/obstacle_8pi.png"
+}
+images {
+  image: "/images/obstacle_8pu.png"
+}
+images {
+  image: "/images/obstacle_8y.png"
+}
+images {
+  image: "/images/obstacle_9b.png"
+}
+images {
+  image: "/images/obstacle_9g.png"
+}
+images {
+  image: "/images/obstacle_9o.png"
+}
+images {
+  image: "/images/obstacle_9pi.png"
+}
+images {
+  image: "/images/obstacle_9pu.png"
+}
+images {
+  image: "/images/obstacle_9y.png"
+}
+margin: 1
+extrude_borders: 0
+inner_padding: 1

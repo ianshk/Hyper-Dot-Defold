@@ -1,0 +1,55 @@
+local SCREEN_WIDTH = tonumber(sys.get_config("display.width"))
+local SCREEN_HEIGHT = tonumber(sys.get_config("display.height"))
+
+function init(self)
+	msg.post("#camera", "acquire_camera_focus")
+	msg.post("@render:", "set_cameratype_viewproj")
+
+	self.new_position = vmath.vector3(0,0,0)
+	self.starting_point = vmath.vector3(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 300, 0)
+	self.camera_running = 0
+end
+
+
+function final(self)
+	msg.post("camera", "release_camera_focus")
+end
+
+
+local function camera_shift(self)
+	local new_pos = self.new_position
+	new_pos = new_pos - self.starting_point
+	go.animate("camera", "position", go.PLAYBACK_ONCE_FORWARD, new_pos, go.EASING_LINEAR, 0.8, 0)
+end
+
+
+local function camera_scroll(self)
+	local camera = go.get_position(".")
+	camera.y = camera.y + 2
+	go.set_position(camera, ".")
+end
+
+
+local function camera_stop(self)
+	go.cancel_animations("camera", "position")
+end
+
+
+function update(self, dt)
+	if self.camera_running == 1 then
+		camera_scroll(self)
+	end
+end
+
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("shift") then
+		self.new_position = message.position
+		camera_shift(self)
+	elseif message_id == hash("start") then
+		self.camera_running = 1
+	elseif message_id == hash("stop") then
+		camera_stop(self)
+		self.camera_running = 0
+	end
+end

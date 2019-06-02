@@ -1,0 +1,38 @@
+math.randomseed(os.time())
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	msg.post("#menuproxy", "load")
+
+	--print(msg.url())
+	self.reloaded = 0
+end
+
+
+function final(self)
+	msg.post(".", "release_input_focus")
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("load_game") then
+		--self.reloaded = 1
+		msg.post("#gameproxy", "load")
+		msg.post("#menuproxy", "unload")	
+
+	elseif message_id == hash("reload_game") then
+		self.reloaded = 1
+		msg.post("#gameproxy", "unload")
+	elseif message_id == hash("show_menu") then
+		self.reloaded = 0
+		msg.post("#menuproxy", "load")
+		msg.post("#gameproxy", "unload")		
+	elseif message_id == hash("proxy_loaded") then
+		msg.post(sender, "enable")
+	elseif message_id == hash("proxy_unloaded") then
+		-- If reloading the game we need to wait until the game proxy has been unloaded
+		-- before loading again
+		if self.reloaded == 1 then
+			msg.post("#gameproxy", "load")
+		end
+	end
+end
