@@ -1,2 +1,2 @@
 # Hyper-Dot-Defold
-A Hyper-Casual game made in the defold game engine
+Hyper-Casual mobile game made in the defold game engine
